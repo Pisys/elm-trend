@@ -11,7 +11,7 @@ import Array
 initialTrend : Int -> List Float -> Float
 initialTrend period data =
   let
-    period' = toFloat period
+    period2 = toFloat period
     indexed = Array.fromList data
     sum =
       indexed
@@ -23,11 +23,11 @@ initialTrend period data =
               |> Maybe.withDefault 0.0)
       |> Array.foldr (+) 0
   in
-    sum / (period' * period')
+    sum / (period2 * period2)
 
 
-split' : Int -> List Float -> List (List Float) -> List (List Float)
-split' period data result =
+split2 : Int -> List Float -> List (List Float) -> List (List Float)
+split2 period data result =
   if data == [] then
     result
   else
@@ -35,12 +35,12 @@ split' period data result =
       chunk = List.take period data
       rest  = List.drop period data
     in
-      split' period rest (chunk :: result)
+      split2 period rest (chunk :: result)
 
 
 split : Int -> List Float -> List (List Float)
 split period data =
-  split' period data [] |> List.reverse
+  split2 period data [] |> List.reverse
 
 
 avgLists : Int -> List (List Float) -> List Float
@@ -63,7 +63,7 @@ listUnzip l =
       |> Maybe.withDefault []
       |> List.length
     init =
-      List.map (\i -> []) [0..innerLength]
+      List.map (\i -> []) <| List.range 0 innerLength
   in
     List.foldr (List.map2 (::)) init l
 
@@ -119,7 +119,7 @@ generateForcast st m bt crazy_it =
   (st + (toFloat m * bt)) * crazy_it
 
 
-calculateHoltWinters'
+calculateHoltWinters2
     : Float
     -> Float
     -> Float
@@ -132,23 +132,23 @@ calculateHoltWinters'
     -> List Float
     -> List Float
     -> List Float
-calculateHoltWinters' alpha beta gamma period m it last_st last_bt index data result =
+calculateHoltWinters2 alpha beta gamma period m it last_st last_bt index data result =
   case data of
     (value::rest) ->
       let
         getWithDefault i a = Array.get i a |> Maybe.withDefault 0.0
         st = levelSmoothing alpha period (getWithDefault (index - period) it) index value last_st last_bt
         bt = trendSmoothing gamma last_st last_bt st
-        it' =
+        it2 =
           if index - period >= 0 then
             getWithDefault (index - period) it
             |> seasonalSmoothing beta value st
             |> (flip Array.push) it
           else
             it
-        ft = generateForcast st m bt (getWithDefault (index - period + m) it')
+        ft = generateForcast st m bt (getWithDefault (index - period + m) it2)
       in
-        calculateHoltWinters' alpha beta gamma period m it' st bt (index + 1) rest (ft::result)
+        calculateHoltWinters2 alpha beta gamma period m it2 st bt (index + 1) rest (ft::result)
     [] ->
       result
 
@@ -160,7 +160,7 @@ calculateHoltWinters alpha beta gamma period m initTrend seasonal data =
     restObs = List.drop 2 data
     it = Array.fromList seasonal
   in
-    calculateHoltWinters' alpha beta gamma period m it firstObs initTrend 2 restObs []
+    calculateHoltWinters2 alpha beta gamma period m it firstObs initTrend 2 restObs []
 
 
 {-| Creates a seasonal forecast. Set the following parameters:

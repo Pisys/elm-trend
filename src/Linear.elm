@@ -15,15 +15,15 @@ module Linear exposing (regression, forecast)
 regression : List (Float, Float) -> (Float -> Float)
 regression points =
   let
-    len = List.length points
+    len = List.length points |> toFloat
     (x_sum, y_sum, x_sqr, xTimesy) =
       List.foldr 
         (\(x, y) (x_sum, y_sum, x_sqr, xTimesy) -> 
           (x_sum + x, y_sum + y, x_sqr + x * x, xTimesy + x * y)
         )    
         (0, 0, 0, 0) points
-    m = toFloat (len * xTimesy - x_sum * y_sum) / toFloat (len * x_sqr - x_sum * x_sum)
-    b = (toFloat y_sum / toFloat len) - (m * x_sum) / toFloat len
+    m = (len * xTimesy - x_sum * y_sum) / (len * x_sqr - x_sum * x_sum)
+    b = (y_sum / len) - (m * x_sum) / len
     fun x = x * m + b
   in
     fun
@@ -47,7 +47,7 @@ forecast m points =
       |> List.head
       |> Maybe.withDefault (0,0)
     range = 
-      [(lastX + 1) .. (lastX + m)]
+      List.range (round lastX + 1) (round lastX + m)
       |> List.map toFloat 
   in
     List.map regressionFunction range
